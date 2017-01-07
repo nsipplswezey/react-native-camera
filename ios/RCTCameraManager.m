@@ -800,97 +800,104 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
   });
 }
 
-- (void)captureOutput:(AVCaptureFileOutput *)captureOutput
-didFinishRecordingToOutputFileAtURL:(NSURL *)outputFileURL
-      fromConnections:(NSArray *)connections
-                error:(NSError *)error
+//- (void)captureOutput:(AVCaptureFileOutput *)captureOutput
+//didFinishRecordingToOutputFileAtURL:(NSURL *)outputFileURL
+//      fromConnections:(NSArray *)connections
+//                error:(NSError *)error
+//{
+//  BOOL recordSuccess = YES;
+//  if ([error code] != noErr) {
+//    // A problem occurred: Find out if the recording was successful.
+//    id value = [[error userInfo] objectForKey:AVErrorRecordingSuccessfullyFinishedKey];
+//    if (value) {
+//      recordSuccess = [value boolValue];
+//    }
+//  }
+//  if (!recordSuccess) {
+//    self.videoReject(RCTErrorUnspecified, nil, RCTErrorWithMessage(@"Error while recording"));
+//    return;
+//  }
+//
+//  AVURLAsset* videoAsAsset = [AVURLAsset URLAssetWithURL:outputFileURL options:nil];
+//  AVAssetTrack* videoTrack = [[videoAsAsset tracksWithMediaType:AVMediaTypeVideo] objectAtIndex:0];
+//  float videoWidth;
+//  float videoHeight;
+//
+//  CGSize videoSize = [videoTrack naturalSize];
+//  CGAffineTransform txf = [videoTrack preferredTransform];
+//
+//  if ((txf.tx == videoSize.width && txf.ty == videoSize.height) || (txf.tx == 0 && txf.ty == 0)) {
+//    // Video recorded in landscape orientation
+//    videoWidth = videoSize.width;
+//    videoHeight = videoSize.height;
+//  } else {
+//    // Video recorded in portrait orientation, so have to swap reported width/height
+//    videoWidth = videoSize.height;
+//    videoHeight = videoSize.width;
+//  }
+//
+//  NSMutableDictionary *videoInfo = [NSMutableDictionary dictionaryWithDictionary:@{
+//     @"duration":[NSNumber numberWithFloat:CMTimeGetSeconds(videoAsAsset.duration)],
+//     @"width":[NSNumber numberWithFloat:videoWidth],
+//     @"height":[NSNumber numberWithFloat:videoHeight],
+//     @"size":[NSNumber numberWithLongLong:captureOutput.recordedFileSize],
+//  }];
+//
+//  if (self.videoTarget == RCTCameraCaptureTargetCameraRoll) {
+//    ALAssetsLibrary *library = [[ALAssetsLibrary alloc] init];
+//    if ([library videoAtPathIsCompatibleWithSavedPhotosAlbum:outputFileURL]) {
+//      [library writeVideoAtPathToSavedPhotosAlbum:outputFileURL
+//                                  completionBlock:^(NSURL *assetURL, NSError *error) {
+//                                    if (error) {
+//                                      self.videoReject(RCTErrorUnspecified, nil, RCTErrorWithMessage(error.description));
+//                                      return;
+//                                    }
+//                                    [videoInfo setObject:[assetURL absoluteString] forKey:@"path"];
+//                                    self.videoResolve(videoInfo);
+//                                  }];
+//    }
+//  }
+//  else if (self.videoTarget == RCTCameraCaptureTargetDisk) {
+//    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+//    NSString *documentsDirectory = [paths firstObject];
+//    NSString *fullPath = [[documentsDirectory stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]] stringByAppendingPathExtension:@"mov"];
+//
+//    NSFileManager * fileManager = [NSFileManager defaultManager];
+//    NSError * error = nil;
+//
+//    //moving to destination
+//    if (!([fileManager moveItemAtPath:[outputFileURL path] toPath:fullPath error:&error])) {
+//      self.videoReject(RCTErrorUnspecified, nil, RCTErrorWithMessage(error.description));
+//      return;
+//    }
+//    [videoInfo setObject:fullPath forKey:@"path"];
+//    self.videoResolve(videoInfo);
+//  }
+//  else if (self.videoTarget == RCTCameraCaptureTargetTemp) {
+//    NSString *fileName = [[NSProcessInfo processInfo] globallyUniqueString];
+//    NSString *fullPath = [NSString stringWithFormat:@"%@%@.mov", NSTemporaryDirectory(), fileName];
+//
+//    NSFileManager * fileManager = [NSFileManager defaultManager];
+//    NSError * error = nil;
+//
+//    //moving to destination
+//    if (!([fileManager moveItemAtPath:[outputFileURL path] toPath:fullPath error:&error])) {
+//        self.videoReject(RCTErrorUnspecified, nil, RCTErrorWithMessage(error.description));
+//        return;
+//    }
+//    [videoInfo setObject:fullPath forKey:@"path"];
+//    self.videoResolve(videoInfo);
+//  }
+//  else {
+//    self.videoReject(RCTErrorUnspecified, nil, RCTErrorWithMessage(@"Target not supported"));
+//  }
+//}
+
+- (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection
 {
-  BOOL recordSuccess = YES;
-  if ([error code] != noErr) {
-    // A problem occurred: Find out if the recording was successful.
-    id value = [[error userInfo] objectForKey:AVErrorRecordingSuccessfullyFinishedKey];
-    if (value) {
-      recordSuccess = [value boolValue];
-    }
-  }
-  if (!recordSuccess) {
-    self.videoReject(RCTErrorUnspecified, nil, RCTErrorWithMessage(@"Error while recording"));
-    return;
-  }
-
-  AVURLAsset* videoAsAsset = [AVURLAsset URLAssetWithURL:outputFileURL options:nil];
-  AVAssetTrack* videoTrack = [[videoAsAsset tracksWithMediaType:AVMediaTypeVideo] objectAtIndex:0];
-  float videoWidth;
-  float videoHeight;
-
-  CGSize videoSize = [videoTrack naturalSize];
-  CGAffineTransform txf = [videoTrack preferredTransform];
-
-  if ((txf.tx == videoSize.width && txf.ty == videoSize.height) || (txf.tx == 0 && txf.ty == 0)) {
-    // Video recorded in landscape orientation
-    videoWidth = videoSize.width;
-    videoHeight = videoSize.height;
-  } else {
-    // Video recorded in portrait orientation, so have to swap reported width/height
-    videoWidth = videoSize.height;
-    videoHeight = videoSize.width;
-  }
-
-  NSMutableDictionary *videoInfo = [NSMutableDictionary dictionaryWithDictionary:@{
-     @"duration":[NSNumber numberWithFloat:CMTimeGetSeconds(videoAsAsset.duration)],
-     @"width":[NSNumber numberWithFloat:videoWidth],
-     @"height":[NSNumber numberWithFloat:videoHeight],
-     @"size":[NSNumber numberWithLongLong:captureOutput.recordedFileSize],
-  }];
-
-  if (self.videoTarget == RCTCameraCaptureTargetCameraRoll) {
-    ALAssetsLibrary *library = [[ALAssetsLibrary alloc] init];
-    if ([library videoAtPathIsCompatibleWithSavedPhotosAlbum:outputFileURL]) {
-      [library writeVideoAtPathToSavedPhotosAlbum:outputFileURL
-                                  completionBlock:^(NSURL *assetURL, NSError *error) {
-                                    if (error) {
-                                      self.videoReject(RCTErrorUnspecified, nil, RCTErrorWithMessage(error.description));
-                                      return;
-                                    }
-                                    [videoInfo setObject:[assetURL absoluteString] forKey:@"path"];
-                                    self.videoResolve(videoInfo);
-                                  }];
-    }
-  }
-  else if (self.videoTarget == RCTCameraCaptureTargetDisk) {
-    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    NSString *documentsDirectory = [paths firstObject];
-    NSString *fullPath = [[documentsDirectory stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]] stringByAppendingPathExtension:@"mov"];
-
-    NSFileManager * fileManager = [NSFileManager defaultManager];
-    NSError * error = nil;
-
-    //moving to destination
-    if (!([fileManager moveItemAtPath:[outputFileURL path] toPath:fullPath error:&error])) {
-      self.videoReject(RCTErrorUnspecified, nil, RCTErrorWithMessage(error.description));
-      return;
-    }
-    [videoInfo setObject:fullPath forKey:@"path"];
-    self.videoResolve(videoInfo);
-  }
-  else if (self.videoTarget == RCTCameraCaptureTargetTemp) {
-    NSString *fileName = [[NSProcessInfo processInfo] globallyUniqueString];
-    NSString *fullPath = [NSString stringWithFormat:@"%@%@.mov", NSTemporaryDirectory(), fileName];
-
-    NSFileManager * fileManager = [NSFileManager defaultManager];
-    NSError * error = nil;
-
-    //moving to destination
-    if (!([fileManager moveItemAtPath:[outputFileURL path] toPath:fullPath error:&error])) {
-        self.videoReject(RCTErrorUnspecified, nil, RCTErrorWithMessage(error.description));
-        return;
-    }
-    [videoInfo setObject:fullPath forKey:@"path"];
-    self.videoResolve(videoInfo);
-  }
-  else {
-    self.videoReject(RCTErrorUnspecified, nil, RCTErrorWithMessage(@"Target not supported"));
-  }
+    //CVPixelBufferRef pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
+    //[self runCNNOnFrame:pixelBuffer];
+    NSLog(@"Hello");
 }
 
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputMetadataObjects:(NSArray *)metadataObjects fromConnection:(AVCaptureConnection *)connection {
