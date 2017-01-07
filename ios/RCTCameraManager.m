@@ -439,11 +439,20 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
       self.stillImageOutput = stillImageOutput;
     }
 
-    AVCaptureMovieFileOutput *movieFileOutput = [[AVCaptureMovieFileOutput alloc] init];
-    if ([self.session canAddOutput:movieFileOutput])
+//    AVCaptureMovieFileOutput *movieFileOutput = [[AVCaptureMovieFileOutput alloc] init];
+//    if ([self.session canAddOutput:movieFileOutput])
+//    {
+//      [self.session addOutput:movieFileOutput];
+//      self.movieFileOutput = movieFileOutput;
+//    }
+      
+    AVCaptureVideoDataOutput *videoDataOutput = [[AVCaptureVideoDataOutput alloc] init];
+    if ([self.session canAddOutput:videoDataOutput])
     {
-      [self.session addOutput:movieFileOutput];
-      self.movieFileOutput = movieFileOutput;
+        self.videoDataOutputQueue = dispatch_queue_create("VideoDataOutputQueue", DISPATCH_QUEUE_SERIAL);
+        [videoDataOutput setSampleBufferDelegate:self queue:self.videoDataOutputQueue];
+        NSLog(@"running addOutput videoDataOutput");
+        [self.session addOutput:videoDataOutput];
     }
 
     AVCaptureMetadataOutput *metadataOutput = [[AVCaptureMetadataOutput alloc] init];
