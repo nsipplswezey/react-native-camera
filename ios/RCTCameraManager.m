@@ -445,7 +445,7 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 //      [self.session addOutput:movieFileOutput];
 //      self.movieFileOutput = movieFileOutput;
 //    }
-      
+
     AVCaptureVideoDataOutput *videoDataOutput = [[AVCaptureVideoDataOutput alloc] init];
     if ([self.session canAddOutput:videoDataOutput])
     {
@@ -895,9 +895,16 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection
 {
-    //CVPixelBufferRef pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
-    //[self runCNNOnFrame:pixelBuffer];
-    NSLog(@"Hello");
+  //CVPixelBufferRef pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
+  //[self runCNNOnFrame:pixelBuffer];
+
+  NSLog(@"Hello");
+
+  NSDictionary *event = @{
+                          @"data": @"Hello there"
+                          };
+
+  [self.bridge.eventDispatcher sendAppEventWithName:@"CameraCNNDetect" body:event];
 }
 
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputMetadataObjects:(NSArray *)metadataObjects fromConnection:(AVCaptureConnection *)connection {
