@@ -54,6 +54,7 @@ function convertNativeProps(props) {
   }
 
   newProps.barcodeScannerEnabled = typeof props.onBarCodeRead === 'function'
+  newProps.CNNDetectorEnabled = typeof props.onCNNDetect === 'function'
 
   return newProps;
 }
@@ -98,7 +99,9 @@ export default class Camera extends Component {
     ]),
     keepAwake: PropTypes.bool,
     onBarCodeRead: PropTypes.func,
+    onCNNDetect: PropTypes.func,    
     barcodeScannerEnabled: PropTypes.bool,
+    CNNDetectorEnabled: PropTypes.bool,
     onFocusChanged: PropTypes.func,
     onZoomChanged: PropTypes.func,
     mirrorImage: PropTypes.bool,
@@ -154,6 +157,7 @@ export default class Camera extends Component {
 
   async componentWillMount() {
     this._addOnBarCodeReadListener()
+    this._addOnCNNDetectListener()
 
     let { captureMode } = convertNativeProps({ captureMode: this.props.captureMode })
     let hasVideoAndAudio = this.props.captureAudio && captureMode === Camera.constants.CaptureMode.video
@@ -167,6 +171,7 @@ export default class Camera extends Component {
 
   componentWillUnmount() {
     this._removeOnBarCodeReadListener()
+    this._removeCNNDetectListener()
 
     if (this.state.isRecording) {
       this.stopCapture();
@@ -174,10 +179,15 @@ export default class Camera extends Component {
   }
 
   componentWillReceiveProps(newProps) {
-    const { onBarCodeRead } = this.props
+    const { onBarCodeRead, onCNNDetect } = this.props
     if (onBarCodeRead !== newProps.onBarCodeRead) {
       this._addOnBarCodeReadListener(newProps)
     }
+
+    if (onCNNDetect !== newProps.onCNNDetect) {
+      this._addOnCNNDetectListener(newProps)
+    }
+
   }
 
   _addOnBarCodeReadListener(props) {
@@ -197,6 +207,23 @@ export default class Camera extends Component {
     }
   }
 
+  _addOnCNNDetectListener(props) {
+    const { onCNNDetect } = props || this.props
+    this._removeCNNDetectListener()
+    if (onCNNDetect) {
+      this.cameraCNNDetectListener = Platform.select({
+        ios: NativeAppEventEmitter.addListener('CameraCNNDetect', this._onCNNDetect),
+        android: DeviceEventEmitter.addListener('CameraBarCodeReadAndroid',  this._onBarCodeRead)
+      })
+    }
+  }
+  _removeCNNDetectListener() {
+    const listener = this.cameraCNNDetectListener
+    if (listener) {
+      listener.remove()
+    }
+  }
+
   render() {
     const style = [styles.base, this.props.style];
     const nativeProps = convertNativeProps(this.props);
@@ -207,6 +234,12 @@ export default class Camera extends Component {
   _onBarCodeRead = (data) => {
     if (this.props.onBarCodeRead) {
       this.props.onBarCodeRead(data)
+    }
+  };
+
+  _onCNNDetect = (data) => {
+    if (this.props.onCNNDetect) {
+      this.props.onCNNDetect(data)
     }
   };
 
