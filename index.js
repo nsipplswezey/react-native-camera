@@ -245,7 +245,7 @@ export default class Camera extends Component {
 
   setCNNModel(model) {
   
-    CameraManager.setModel(model);
+    CameraManager.setCNNModel(model);
 	return;
   
   }
