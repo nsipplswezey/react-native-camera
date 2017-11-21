@@ -243,6 +243,13 @@ export default class Camera extends Component {
     }
   };
 
+  setCNNModel(model) {
+  
+    CameraManager.setModel(model);
+	return;
+  
+  }
+
   capture(options) {
     const props = convertNativeProps(this.props);
     options = {
