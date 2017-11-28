@@ -450,6 +450,12 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
     AVCaptureVideoDataOutput *videoDataOutput = [[AVCaptureVideoDataOutput alloc] init];
     if ([self.session canAddOutput:videoDataOutput])
     {
+        // we want BGRA, both CoreGraphics and OpenGL work well with 'BGRA'
+        NSDictionary *rgbOutputSettings = [NSDictionary dictionaryWithObject:
+                                           [NSNumber numberWithInt:kCMPixelFormat_32BGRA] forKey:(id)kCVPixelBufferPixelFormatTypeKey];
+        [videoDataOutput setVideoSettings:rgbOutputSettings];
+        [videoDataOutput setAlwaysDiscardsLateVideoFrames:YES]; // discard if the data output queue is blocked (as we process the still image)
+        
         self.videoDataOutputQueue = dispatch_queue_create("VideoDataOutputQueue", DISPATCH_QUEUE_SERIAL);
         [videoDataOutput setSampleBufferDelegate:self queue:self.videoDataOutputQueue];
         NSLog(@"running addOutput videoDataOutput");
@@ -920,6 +926,12 @@ RCT_EXPORT_METHOD(setCNNModel:(NSString *)model) {
 {
   //CVPixelBufferRef pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
   //[self runCNNOnFrame:pixelBuffer];
+    if( (network != NULL) && (predictor != NULL) ){
+        NSLog(@"Network and predictor set");
+        CVPixelBufferRef pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
+        [self runCNNOnFrame:pixelBuffer];
+        
+    }
 
   NSLog(@"Hello");
 
@@ -929,6 +941,61 @@ RCT_EXPORT_METHOD(setCNNModel:(NSString *)model) {
 
   [self.bridge.eventDispatcher sendAppEventWithName:@"CameraCNNDetect" body:event];
 }
+
+- (void)runCNNOnFrame: (CVPixelBufferRef) pixelBuffer
+{
+    assert(pixelBuffer != NULL);
+    
+    OSType sourcePixelFormat = CVPixelBufferGetPixelFormatType( pixelBuffer );
+    int doReverseChannels;
+    if ( kCVPixelFormatType_32ARGB == sourcePixelFormat ) {
+        doReverseChannels = 1;
+    } else if ( kCVPixelFormatType_32BGRA == sourcePixelFormat ) {
+        doReverseChannels = 0;
+    } else {
+        assert(false); // Unknown source format
+    }
+    
+    const int sourceRowBytes = (int)CVPixelBufferGetBytesPerRow( pixelBuffer );
+    const int width = (int)CVPixelBufferGetWidth( pixelBuffer );
+    const int fullHeight = (int)CVPixelBufferGetHeight( pixelBuffer );
+    CVPixelBufferLockBaseAddress( pixelBuffer, 0 );
+    unsigned char* sourceBaseAddr = CVPixelBufferGetBaseAddress( pixelBuffer );
+    int height;
+    unsigned char* sourceStartAddr;
+    if (fullHeight <= width) {
+        height = fullHeight;
+        sourceStartAddr = sourceBaseAddr;
+    } else {
+        height = width;
+        const int marginY = ((fullHeight - width) / 2);
+        sourceStartAddr = (sourceBaseAddr + (marginY * sourceRowBytes));
+    }
+    void* cnnInput = jpcnn_create_image_buffer_from_uint8_data(sourceStartAddr, width, height, 4, sourceRowBytes, doReverseChannels, 1);
+    float* predictions;
+    int predictionsLength;
+    char** predictionsLabels;
+    int predictionsLabelsLength;
+    
+    jpcnn_classify_image(network, cnnInput, JPCNN_RANDOM_SAMPLE, -2, &predictions, &predictionsLength, &predictionsLabels, &predictionsLabelsLength);
+    
+    jpcnn_destroy_image_buffer(cnnInput);
+    
+    const float predictionValue = jpcnn_predict(predictor, predictions, predictionsLength);
+    
+    NSLog(@"Prediction value is: %f", predictionValue);
+    
+    //    NSMutableDictionary* values = [NSMutableDictionary
+    //                                   dictionaryWithObject: [NSNumber numberWithFloat: predictionValue]
+    //                                   forKey: @"VoltAGE"];
+    //
+    //    dispatch_async(dispatch_get_main_queue(), ^(void) {
+    //        [self setPredictionValues: values];
+    //    });
+}
+
+
+
 
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputMetadataObjects:(NSArray *)metadataObjects fromConnection:(AVCaptureConnection *)connection {
 
