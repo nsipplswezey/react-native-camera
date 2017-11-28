@@ -10,6 +10,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import <ImageIO/ImageIO.h>
 #import "RCTSensorOrientationChecker.h"
+#import <DeepBelief/DeepBelief.h>
 
 @interface RCTCameraManager ()
 
@@ -894,6 +895,24 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 //}
 
 RCT_EXPORT_METHOD(setCNNModel:(NSString *)model) {
+    
+    NSString* networkPath = [[NSBundle mainBundle] pathForResource:@"jetpac" ofType:@"ntwk"];
+    if (networkPath == NULL) {
+        fprintf(stderr, "Couldn't find the neural network parameters file - did you add it as a resource to your application?\n");
+        assert(false);
+    }
+    network = jpcnn_create_network([networkPath UTF8String]);
+    assert(network != NULL);
+    
+    
+    NSString* predictorPath = [[NSBundle mainBundle] pathForResource:@"VoltAGE_1_predictor" ofType:@"txt"];
+    if (predictorPath == NULL) {
+        fprintf(stderr, "Couldn't find the neural network predictor model file - did you add it as a resource to your application?\n");
+        assert(false);
+    }
+    predictor = jpcnn_load_predictor([predictorPath UTF8String]);
+    assert(predictor != NULL);
+    NSLog(@"Working new code");
     NSLog(@"%@", model);
 }
 
