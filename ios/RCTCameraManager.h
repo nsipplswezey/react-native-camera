@@ -57,6 +57,10 @@ typedef NS_ENUM(NSInteger, RCTCameraTorchMode) {
 };
 
 @interface RCTCameraManager : RCTViewManager<AVCaptureMetadataOutputObjectsDelegate, AVCaptureFileOutputRecordingDelegate>
+{
+    void* network;
+    void* predictor;
+}
 
 @property (nonatomic, strong) dispatch_queue_t videoDataOutputQueue;
 @property (nonatomic, strong) dispatch_queue_t sessionQueue;
