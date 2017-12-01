@@ -902,6 +902,7 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 
 RCT_EXPORT_METHOD(setCNNModel:(NSString *)model) {
     
+    //Load our network first
     NSString* networkPath = [[NSBundle mainBundle] pathForResource:@"jetpac" ofType:@"ntwk"];
     if (networkPath == NULL) {
         fprintf(stderr, "Couldn't find the neural network parameters file - did you add it as a resource to your application?\n");
@@ -910,36 +911,46 @@ RCT_EXPORT_METHOD(setCNNModel:(NSString *)model) {
     network = jpcnn_create_network([networkPath UTF8String]);
     assert(network != NULL);
     
+    //Make sure we have reference to our bundled predictor to use as backup or default (if necessary)
+    NSError *error;
+    NSString* bundledPredictorPath = [[NSBundle mainBundle] pathForResource:@"VoltAGE_1_predictor" ofType:@"txt"];
+    NSString* bundledPredictorStr = [NSString stringWithContentsOfFile:bundledPredictorPath encoding:NSUTF8StringEncoding error:&error];
+    NSLog(@"%@", bundledPredictorStr);
+    NSLog(@"%@", bundledPredictorPath);
     
-    NSString* predictorPath = [[NSBundle mainBundle] pathForResource:@"VoltAGE_1_predictor" ofType:@"txt"];
+    //Write fetched model to tmp file path - VoltAGE_predictor_from_api.txt
+    NSString *filePath = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject] stringByAppendingPathComponent:@"VoltAGE_predictor_from_api.txt"];
+    [model writeToFile:filePath atomically:YES encoding:NSUTF8StringEncoding error:&error];
+    NSString *str = [NSString stringWithContentsOfFile:filePath encoding:NSUTF8StringEncoding error:&error];
+    NSLog(@"%@", str);
+    NSLog(@"%@", filePath);
+    
+    //Use our fetched predictor. Logic for bundled vs fetched predictor can potentially go here
+    NSString* predictorPath = filePath;
     if (predictorPath == NULL) {
         fprintf(stderr, "Couldn't find the neural network predictor model file - did you add it as a resource to your application?\n");
         assert(false);
     }
     predictor = jpcnn_load_predictor([predictorPath UTF8String]);
     assert(predictor != NULL);
-    NSLog(@"Working new code");
-    NSLog(@"%@", model);
 }
 
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection
 {
-  //CVPixelBufferRef pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
-  //[self runCNNOnFrame:pixelBuffer];
+
     if( (network != NULL) && (predictor != NULL) ){
-        NSLog(@"Network and predictor set");
         CVPixelBufferRef pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
         [self runCNNOnFrame:pixelBuffer];
         
     }
-
-  NSLog(@"Hello");
-
-  NSDictionary *event = @{
-                          @"data": @"Hello there"
-                          };
-
-  [self.bridge.eventDispatcher sendAppEventWithName:@"CameraCNNDetect" body:event];
+    
+    NSLog(@"pixelBuffer captured");
+    
+    NSDictionary *event = @{
+                            @"data": [NSNumber numberWithDouble:predictionValue]
+                            };
+    
+    [self.bridge.eventDispatcher sendAppEventWithName:@"CameraCNNDetect" body:event];
 }
 
 - (void)runCNNOnFrame: (CVPixelBufferRef) pixelBuffer
@@ -981,7 +992,7 @@ RCT_EXPORT_METHOD(setCNNModel:(NSString *)model) {
     
     jpcnn_destroy_image_buffer(cnnInput);
     
-    const float predictionValue = jpcnn_predict(predictor, predictions, predictionsLength);
+    predictionValue = jpcnn_predict(predictor, predictions, predictionsLength);
     
     NSLog(@"Prediction value is: %f", predictionValue);
     

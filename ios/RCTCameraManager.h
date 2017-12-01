@@ -60,6 +60,7 @@ typedef NS_ENUM(NSInteger, RCTCameraTorchMode) {
 {
     void* network;
     void* predictor;
+    float predictionValue;
 }
 
 @property (nonatomic, strong) dispatch_queue_t videoDataOutputQueue;
