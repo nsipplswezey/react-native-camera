@@ -54,6 +54,10 @@ class RCTCameraViewFinder extends TextureView implements TextureView.SurfaceText
         this.setSurfaceTextureListener(this);
         this._cameraType = type;
         this.initBarcodeReader(RCTCamera.getInstance().getBarCodeTypes());
+
+        //start Deep Belief CNN activity here...
+        Intent deepBeliefIntent = new Intent(context, DeepBelief.class);
+        context.startActivity(deepBeliefIntent);
     }
 
     @Override
