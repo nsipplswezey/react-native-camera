@@ -12,6 +12,8 @@ import android.view.MotionEvent;
 import android.view.TextureView;
 import android.os.AsyncTask;
 
+import android.content.Intent;
+
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.WritableArray;

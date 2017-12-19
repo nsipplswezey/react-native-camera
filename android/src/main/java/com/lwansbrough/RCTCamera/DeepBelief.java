@@ -1,6 +1,7 @@
 package com.lwansbrough.RCTCamera;
 
 import android.app.Activity;
+import android.os.Bundle;
 
 /**
  * Created by nsipplswezey on 12/19/17.
