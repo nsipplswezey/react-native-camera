@@ -5,8 +5,12 @@
 package com.lwansbrough.RCTCamera;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
+import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.view.MotionEvent;
 import android.view.TextureView;
@@ -20,6 +24,7 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.EnumMap;
@@ -50,6 +55,9 @@ class RCTCameraViewFinder extends TextureView implements TextureView.SurfaceText
 
     // reader instance for the barcode scanner
     private final MultiFormatReader _multiFormatReader = new MultiFormatReader();
+
+    // CNN Setup: concurrency lock for CNN detector to avoid flooding the runtime
+    public static volatile boolean CNNDetectorTaskLock = false;
 
     public RCTCameraViewFinder(Context context, int type) {
         super(context);
@@ -291,9 +299,51 @@ class RCTCameraViewFinder extends TextureView implements TextureView.SurfaceText
      * See {Camera.PreviewCallback}
      */
     public void onPreviewFrame(byte[] data, Camera camera) {
+
+        if (!RCTCameraViewFinder.CNNDetectorTaskLock){
+            RCTCameraViewFinder.CNNDetectorTaskLock = true;
+            new CNNAsyncTask(camera, data).execute();
+        }
+
         if (RCTCamera.getInstance().isBarcodeScannerEnabled() && !RCTCameraViewFinder.barcodeScannerTaskLock) {
             RCTCameraViewFinder.barcodeScannerTaskLock = true;
             new ReaderAsyncTask(camera, data).execute();
+        }
+    }
+
+    private class CNNAsyncTask extends AsyncTask<Void, Void, Void> {
+        private byte[] imageData;
+        private final Camera camera;
+
+        CNNAsyncTask(Camera camera, byte[] imageData) {
+            this.camera = camera;
+            this.imageData = imageData;
+        }
+
+        @Override
+        protected Void doInBackground(Void... ignored) {
+            if (isCancelled()) {
+                return null;
+            }
+
+            Camera.Size previewSize = camera.getParameters().getPreviewSize();
+            YuvImage yuvimage=new YuvImage(imageData, ImageFormat.NV21, previewSize.width, previewSize.height, null);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            yuvimage.compressToJpeg(new Rect(0, 0, previewSize.width, previewSize.height), 80, baos);
+            byte[] jdata = baos.toByteArray();
+            Bitmap bmp = BitmapFactory.decodeByteArray(jdata, 0, jdata.length);
+
+            try {
+                DeepBelief.classifyBitmap(bmp);
+            } catch (Exception e) {
+                // meh
+                android.util.Log.d("ReactNative", "Error classifying bitmap");
+                android.util.Log.d("ReactNative",  android.util.Log.getStackTraceString(e));
+
+            } finally {
+                RCTCameraViewFinder.CNNDetectorTaskLock = false;
+                return null;
+            }
         }
     }
 
