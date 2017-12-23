@@ -335,6 +335,12 @@ class RCTCameraViewFinder extends TextureView implements TextureView.SurfaceText
 
             try {
                 DeepBelief.classifyBitmap(bmp);
+
+                ReactContext reactContext = RCTCameraModule.getReactContextSingleton();                
+                WritableMap event = Arguments.createMap();
+                event.putString("data", "placeholder data");
+                
+                reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class).emit("onCNNDetect", event);
             } catch (Exception e) {
                 // meh
                 android.util.Log.d("ReactNative", "Error classifying bitmap");
