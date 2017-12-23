@@ -213,7 +213,7 @@ export default class Camera extends Component {
     if (onCNNDetect) {
       this.cameraCNNDetectListener = Platform.select({
         ios: NativeAppEventEmitter.addListener('CameraCNNDetect', this._onCNNDetect),
-        android: DeviceEventEmitter.addListener('CameraBarCodeReadAndroid',  this._onBarCodeRead)
+        android: DeviceEventEmitter.addListener('CameraCNNDetect',  this._onCNNDetect)
       })
     }
   }
