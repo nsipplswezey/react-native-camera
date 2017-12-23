@@ -120,7 +120,7 @@ public class DeepBelief extends Activity {
         return bitmap;
     }
 
-    public static void classifyBitmap(Bitmap bitmap) {
+    public static float classifyBitmap(Bitmap bitmap) {
         final int width = bitmap.getWidth();
         final int height = bitmap.getHeight();
         final int pixelCount = (width * height);
