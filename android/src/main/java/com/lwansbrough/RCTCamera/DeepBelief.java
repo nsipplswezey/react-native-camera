@@ -160,6 +160,7 @@ public class DeepBelief extends Activity {
         long stopT = System.currentTimeMillis();
         float duration = (float) (stopT - startT) / 1000.0f;
         android.util.Log.d("ReactNative", "jpcnn_classify_image() + predict() took " + duration + " seconds.");
+        return trainedPredictionValue;
     }
 
 
