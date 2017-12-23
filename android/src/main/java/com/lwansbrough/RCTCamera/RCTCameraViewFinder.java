@@ -334,11 +334,12 @@ class RCTCameraViewFinder extends TextureView implements TextureView.SurfaceText
             Bitmap bmp = BitmapFactory.decodeByteArray(jdata, 0, jdata.length);
 
             try {
-                DeepBelief.classifyBitmap(bmp);
+                float predictionResult = DeepBelief.classifyBitmap(bmp);
 
                 ReactContext reactContext = RCTCameraModule.getReactContextSingleton();                
                 WritableMap event = Arguments.createMap();
-                event.putString("data", "placeholder data");
+
+                event.putString("data", String.valueOf(predictionResult));
                 
                 reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class).emit("CameraCNNDetect", event);
             } catch (Exception e) {
