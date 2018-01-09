@@ -57,7 +57,7 @@ public class DeepBelief extends Activity {
         String predictorFileName = "VoltAGE_2_predictor.txt";
         String predictorFile = dataDir + "/" + predictorFileName;
         copyAsset(am, predictorFileName, predictorFile);
-        predictorHandle = JPCNNLibrary.INSTANCE.jpcnn_load_predictor(predictorFile);
+        //setPredictor(predictorFile);
 
         Bitmap lenaBitmap = getBitmapFromAsset(am,"lena.png");
 
@@ -66,6 +66,10 @@ public class DeepBelief extends Activity {
             classifyBitmap(lenaBitmap);
         }
 
+    }
+
+    public static void setPredictor(String predictorFilePath){
+      predictorHandle = JPCNNLibrary.INSTANCE.jpcnn_load_predictor(predictorFilePath);
     }
 
     private static boolean copyAsset(AssetManager assetManager,

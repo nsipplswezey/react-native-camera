@@ -506,6 +506,33 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
     @ReactMethod
     public void setCNNModel(final String model) {
         Log.d(TAG, "setCNNModel called");
+
+        //write string to file
+        String predictorFileName = "VoltAGE_predictor_from_api.txt";
+        FileOutputStream outputStream;
+
+        try {
+          outputStream = DeepBelief.ctx.openFileOutput(predictorFileName, DeepBelief.ctx.MODE_PRIVATE);
+          outputStream.write(model.getBytes());
+          outputStream.close();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+
+        //get file path
+        String dataDir = DeepBelief.ctx.getFilesDir().getAbsolutePath();
+        Log.d(TAG, dataDir);
+        String predictorFilePath = dataDir + "/" + predictorFileName;
+        Log.d(TAG, predictorFilePath);
+
+        //if file exists, DeepBelief.setPredictor(predictorFile);
+        File file = new File(predictorFilePath);
+        if(file.exists()){
+          Log.d(TAG, "File exists. Setting predictor");
+          DeepBelief.setPredictor(predictorFilePath);
+
+        }
+
     }
 
     private void captureWithOrientation(final ReadableMap options, final Promise promise, int deviceOrientation) {
