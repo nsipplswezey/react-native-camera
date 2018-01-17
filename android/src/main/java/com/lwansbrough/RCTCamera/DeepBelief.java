@@ -19,29 +19,35 @@ import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
 
+import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.ReactApplicationContext;
+
 /**
  * Created by nsipplswezey on 12/19/17.
  */
 
 
-public class DeepBelief extends Activity {
+public class DeepBelief {
 
     public static final String TAG = "DeepBelief";
     static Context ctx;
     static Pointer networkHandle = null;
     static Pointer predictorHandle = null;
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        ctx = this;
-
-        initDeepBelief();
-    }
+    // @Override
+    // public void onCreate(Bundle savedInstanceState) {
+    //     super.onCreate(savedInstanceState);
+    //     ctx = this;
+    //
+    //     initDeepBelief();
+    // }
 
     static void initDeepBelief() {
 
         android.util.Log.d("DeepBelief", "Init deep belief");
+
+        ReactContext reactContext = RCTCameraModule.getReactContextSingleton();
+        ctx = reactContext;
 
         AssetManager am = ctx.getAssets();
         String baseFileName = "jetpac.ntwk";

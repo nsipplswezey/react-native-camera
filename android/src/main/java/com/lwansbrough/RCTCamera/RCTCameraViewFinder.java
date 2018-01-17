@@ -66,8 +66,9 @@ class RCTCameraViewFinder extends TextureView implements TextureView.SurfaceText
         this.initBarcodeReader(RCTCamera.getInstance().getBarCodeTypes());
 
         //start Deep Belief CNN activity here...
-        Intent deepBeliefIntent = new Intent(context, DeepBelief.class);
-        context.startActivity(deepBeliefIntent);
+        DeepBelief.initDeepBelief();
+        // Intent deepBeliefIntent = new Intent(context, DeepBelief.class);
+        // context.startActivity(deepBeliefIntent);
     }
 
     @Override
@@ -336,11 +337,11 @@ class RCTCameraViewFinder extends TextureView implements TextureView.SurfaceText
             try {
                 float predictionResult = DeepBelief.classifyBitmap(bmp);
 
-                ReactContext reactContext = RCTCameraModule.getReactContextSingleton();                
+                ReactContext reactContext = RCTCameraModule.getReactContextSingleton();
                 WritableMap event = Arguments.createMap();
 
                 event.putString("data", String.valueOf(predictionResult));
-                
+
                 reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class).emit("CameraCNNDetect", event);
             } catch (Exception e) {
                 // meh
